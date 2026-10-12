@@ -15,22 +15,63 @@ An unofficial Model Context Protocol ([MCP](https://modelcontextprotocol.io/intr
 
 ## Features
 
-The MCP server provides the following Fathom Analytics tools:
+The MCP server provides the following Fathom Analytics tools. All tools return
+structured JSON.
 
-### Account Information
-- `get-account`: Retrieve details about your Fathom Analytics account
+Which tools are registered depends on what your API token is allowed to do and on
+two opt-in environment variables — see [Capability gating](#capability-gating).
 
-### Sites Management
-- `list-sites`: List all your Fathom Analytics sites
+### Always available (read-only)
+- `get-token`: Metadata about the API token in use, including its abilities and expiry (the secret value is never returned)
+- `list-sites`: List all sites in the account
+- `get-site`: Get a single site by ID
+- `list-events`: List events for a site
+- `get-event`: Get a single event
+- `list-milestones`: List milestones for a site
+- `get-milestone`: Get a single milestone
+- `get-aggregation`: Aggregated analytics reports with filtering and grouping
+- `get-current-visitors`: Real-time data about current site visitors
 
-### Events
-- `list-events`: List events for a specific site
+### Requires a full-access (`*`) token
+- `get-account`: Details about your Fathom Analytics account
 
-### Analytics
-- `get-aggregation`: Generate aggregated analytics reports with flexible filtering and grouping options
+### Requires `FATHOM_ENABLE_WRITES=1`
+- `create-site` (also needs `*`), `update-site`
+- `create-event`, `update-event`
+- `create-milestone`, `update-milestone`
 
-### Visitor Tracking
-- `get-current-visitors`: Get real-time data about current site visitors
+### Requires `FATHOM_ENABLE_WRITES=1` *and* `FATHOM_ENABLE_DESTRUCTIVE=1`
+These are irreversible. Each also requires an exact confirmation string.
+- `delete-site` (also needs `*`), `wipe-site-data` (also needs `*`)
+- `delete-event`, `wipe-event-data`
+- `delete-milestone`
+
+## Capability gating
+
+At startup the server calls `GET /token` and registers only the tools your token
+can actually use. Destructive tools additionally require explicit opt-in via
+environment variable — a full-access token on its own is *not* enough.
+
+This is deliberate. Tools that fail either check are never registered, and an
+unregistered tool cannot be invoked by a mistaken call, a confused model, or
+prompt injection — something a runtime refusal cannot promise. With no opt-in
+vars set, a full-access token still yields a read-only server.
+
+```
+                         read   write   destructive
+read-only token            ✓       —          —
+full-access token          ✓       —          —
+  + FATHOM_ENABLE_WRITES   ✓       ✓          —
+  + ..._ENABLE_DESTRUCTIVE ✓       ✓          ✓
+```
+
+### Known Fathom API limitation
+
+Fathom's OpenAPI spec documents an `id` field on event objects, but the live API
+does not return one. `list-events` therefore omits the key rather than reporting
+a bogus value, and `get-aggregation` with `entity: "event"` cannot be used, since
+there is no way to obtain a valid event `entity_id`. If Fathom begins sending the
+field, it will appear automatically with no code change.
 
 ## Usage
 If you're using Claude Desktop, you can add the MCP server using the json config ([more info](https://modelcontextprotocol.io/quickstart/user)). Here's an example:
