@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FathomApi } from "@mackenly/fathom-api";
 import { attempt, compact, fail } from "../lib/output.js";
 import { confirmationMatches, type Capabilities } from "../lib/guards.js";
+import { siteId } from "../lib/ids.js";
 
 const SHARING = ["none", "private", "public"] as const;
 
@@ -35,7 +36,7 @@ export function registerSitesTools(
     server.tool(
         "get-site",
         "Get a single Fathom Analytics site by ID",
-        { site_id: z.string().describe("ID of the site, e.g. CDBUGS") },
+        { site_id: siteId() },
         ({ site_id }) => attempt(() => client.api.sites.get(site_id), shapeSite as never),
     );
 
@@ -61,7 +62,7 @@ export function registerSitesTools(
             "update-site",
             "Update an existing Fathom Analytics site",
             {
-                site_id: z.string().describe("ID of the site to update"),
+                site_id: siteId("ID of the site to update"),
                 name: z.string().max(255).optional().describe("New name for the website"),
                 sharing: z.enum(SHARING).optional().describe("Sharing configuration"),
                 share_password: z
@@ -84,7 +85,7 @@ export function registerSitesTools(
             "delete-site",
             "PERMANENTLY delete a site and all of its analytics data. Irreversible.",
             {
-                site_id: z.string().describe("ID of the site to delete"),
+                site_id: siteId("ID of the site to delete"),
                 confirm: z
                     .string()
                     .describe("Must be exactly: DELETE SITE <site_id>"),
@@ -104,7 +105,7 @@ export function registerSitesTools(
             "wipe-site-data",
             "PERMANENTLY erase all analytics data for a site, keeping the site itself. Irreversible.",
             {
-                site_id: z.string().describe("ID of the site to wipe"),
+                site_id: siteId("ID of the site to wipe"),
                 confirm: z.string().describe("Must be exactly: WIPE SITE <site_id>"),
             },
             ({ site_id, confirm }) => {

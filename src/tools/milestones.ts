@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { attempt, compact, fail } from "../lib/output.js";
 import { confirmationMatches, type Capabilities } from "../lib/guards.js";
+import { milestoneId, siteId } from "../lib/ids.js";
 import type { FathomHttp, ListResponse, Milestone } from "../lib/http.js";
 
 /** Milestones are absent from @mackenly/fathom-api, so these go over raw HTTP. */
@@ -23,7 +24,7 @@ export function registerMilestonesTools(
         "list-milestones",
         "List milestones for a Fathom Analytics site",
         {
-            site_id: z.string().describe("ID of the site"),
+            site_id: siteId(),
             limit: z.number().positive().optional().describe("Max number of milestones to return"),
         },
         ({ site_id, limit }) =>
@@ -47,8 +48,8 @@ export function registerMilestonesTools(
         "get-milestone",
         "Get a single milestone for a Fathom Analytics site",
         {
-            site_id: z.string().describe("ID of the site"),
-            milestone_id: z.string().describe("UUID of the milestone"),
+            site_id: siteId(),
+            milestone_id: milestoneId(),
         },
         ({ site_id, milestone_id }) =>
             attempt(
@@ -66,7 +67,7 @@ export function registerMilestonesTools(
             "create-milestone",
             "Create a milestone on a Fathom Analytics site",
             {
-                site_id: z.string().describe("ID of the site"),
+                site_id: siteId(),
                 name: z.string().max(30).describe("Name of the milestone (up to 30 characters)"),
                 milestone_date: z.string().describe("Date of the milestone, e.g. 2024-01-15"),
             },
@@ -86,8 +87,8 @@ export function registerMilestonesTools(
             "update-milestone",
             "Update an existing milestone on a Fathom Analytics site",
             {
-                site_id: z.string().describe("ID of the site"),
-                milestone_id: z.string().describe("UUID of the milestone to update"),
+                site_id: siteId(),
+                milestone_id: milestoneId("UUID of the milestone to update"),
                 name: z.string().max(30).optional().describe("New name for the milestone"),
                 milestone_date: z.string().optional().describe("New date, e.g. 2024-01-20"),
             },
@@ -109,8 +110,8 @@ export function registerMilestonesTools(
             "delete-milestone",
             "PERMANENTLY delete a milestone from a site. Irreversible.",
             {
-                site_id: z.string().describe("ID of the site"),
-                milestone_id: z.string().describe("UUID of the milestone to delete"),
+                site_id: siteId(),
+                milestone_id: milestoneId("UUID of the milestone to delete"),
                 confirm: z.string().describe("Must be exactly: DELETE MILESTONE <milestone_id>"),
             },
             ({ site_id, milestone_id, confirm }) => {

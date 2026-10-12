@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FathomApi } from "@mackenly/fathom-api";
 import { attempt, compact, fail } from "../lib/output.js";
 import { confirmationMatches, type Capabilities } from "../lib/guards.js";
+import { eventId, siteId } from "../lib/ids.js";
 
 const CURRENCIES = ["dollar", "pound", "euro", "yuan", "peso", "shekel"] as const;
 
@@ -29,7 +30,7 @@ export function registerEventsTools(
         "list-events",
         "List all events for a Fathom Analytics site (handles pagination). Note: Fathom's API does not currently return event IDs, so results cannot be used as entity_id for get-aggregation.",
         {
-            site_id: z.string().describe("ID of the site to retrieve events for"),
+            site_id: siteId("ID of the site to retrieve events for"),
             limit: z.number().positive().optional().describe("Max number of events to return"),
         },
         ({ site_id, limit }) =>
@@ -47,8 +48,8 @@ export function registerEventsTools(
         "get-event",
         "Get a single event for a Fathom Analytics site",
         {
-            site_id: z.string().describe("ID of the site"),
-            event_id: z.string().describe("ID (tracking code) of the event, e.g. ABCDEFGH"),
+            site_id: siteId(),
+            event_id: eventId(),
         },
         ({ site_id, event_id }) =>
             attempt(() => client.api.events(site_id).get(event_id), shapeEvent as never),
@@ -59,7 +60,7 @@ export function registerEventsTools(
             "create-event",
             "Create a new event on a Fathom Analytics site",
             {
-                site_id: z.string().describe("ID of the site"),
+                site_id: siteId(),
                 name: z.string().max(255).describe("Name of the event (up to 255 characters)"),
                 currency: z.enum(CURRENCIES).optional().describe("Currency for event value"),
             },
@@ -74,8 +75,8 @@ export function registerEventsTools(
             "update-event",
             "Update an existing event on a Fathom Analytics site",
             {
-                site_id: z.string().describe("ID of the site"),
-                event_id: z.string().describe("ID of the event to update"),
+                site_id: siteId(),
+                event_id: eventId("ID of the event to update"),
                 name: z.string().max(255).optional().describe("New name for the event"),
                 currency: z.enum(CURRENCIES).optional().describe("Currency for event value"),
             },
@@ -93,8 +94,8 @@ export function registerEventsTools(
             "delete-event",
             "PERMANENTLY delete an event and its data from a site. Irreversible.",
             {
-                site_id: z.string().describe("ID of the site"),
-                event_id: z.string().describe("ID of the event to delete"),
+                site_id: siteId(),
+                event_id: eventId("ID of the event to delete"),
                 confirm: z.string().describe("Must be exactly: DELETE EVENT <event_id>"),
             },
             ({ site_id, event_id, confirm }) => {
@@ -115,8 +116,8 @@ export function registerEventsTools(
             "wipe-event-data",
             "PERMANENTLY erase all recorded data for an event, keeping the event itself. Irreversible.",
             {
-                site_id: z.string().describe("ID of the site"),
-                event_id: z.string().describe("ID of the event to wipe"),
+                site_id: siteId(),
+                event_id: eventId("ID of the event to wipe"),
                 confirm: z.string().describe("Must be exactly: WIPE EVENT <event_id>"),
             },
             ({ site_id, event_id, confirm }) => {
