@@ -65,13 +65,35 @@ full-access token          ✓       —          —
   + ..._ENABLE_DESTRUCTIVE ✓       ✓          ✓
 ```
 
-### Known Fathom API limitation
+### Events are addressed by name, not by ID
 
-Fathom's OpenAPI spec documents an `id` field on event objects, but the live API
-does not return one. `list-events` therefore omits the key rather than reporting
-a bogus value, and `get-aggregation` with `entity: "event"` cannot be used, since
-there is no way to obtain a valid event `entity_id`. If Fathom begins sending the
-field, it will appear automatically with no code change.
+Fathom's OpenAPI spec still shows an `id` field on event objects, but the live API
+does not return one, and you do not need it. Events are addressed by **name**:
+
+```jsonc
+// Event conversions — use site_id + entity_name
+{ "entity": "event", "site_id": "CDBUGS", "entity_name": "Book New",
+  "aggregates": "conversions,unique_conversions" }
+
+// Pageviews — use entity_id
+{ "entity": "pageview", "entity_id": "CDBUGS", "aggregates": "visits,pageviews" }
+```
+
+Passing `entity_id` for an event is rejected by the API, so `get-aggregation`
+validates the combination up front and returns a clear message instead.
+
+`list-events` omits the `id` key rather than reporting a bogus value. If Fathom
+begins sending the field again, it will appear automatically with no code change.
+
+Two related gotchas:
+
+- **Filter values are case-sensitive.** `device_type` is `Desktop`/`Phone`/`Tablet`
+  — filtering on `desktop` silently returns zero. Group by a field first to
+  discover its exact values.
+- `get-aggregation` bypasses `@mackenly/fathom-api` and calls the API directly.
+  The library validates against an older contract that requires `entity_id` and
+  strips `site_id`/`entity_name`, which makes event aggregation impossible
+  through it.
 
 ## Usage
 If you're using Claude Desktop, you can add the MCP server using the json config ([more info](https://modelcontextprotocol.io/quickstart/user)). Here's an example:

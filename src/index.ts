@@ -47,7 +47,7 @@ async function main() {
     registerSitesTools(server, fathomClient, caps);
     registerEventsTools(server, fathomClient, caps);
     registerMilestonesTools(server, http, caps);
-    registerAggregationTool(server, fathomClient);
+    registerAggregationTool(server, http);
     registerVisitorsTool(server, fathomClient);
 
     const tiers = [
