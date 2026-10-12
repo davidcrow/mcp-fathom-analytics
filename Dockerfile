@@ -5,8 +5,7 @@ WORKDIR /app
 # Install dependencies and build
 COPY package.json package-lock.json tsconfig.json postbuild.js ./
 COPY src ./src
-RUN npm install --production --ignore-scripts && \
-    npm install --save-dev typescript @types/node && \
+RUN npm ci --ignore-scripts && \
     npm run build
 
 # Runtime image
@@ -15,7 +14,7 @@ WORKDIR /app
 # Copy built artifacts and production dependencies
 COPY --from=builder /app/dist ./dist
 COPY package.json package-lock.json ./
-RUN npm install --production --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts
 
 # Set default command
 CMD ["node", "dist/index.js"]
